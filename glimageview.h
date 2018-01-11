@@ -16,7 +16,7 @@ public:
     ~GLImageView();
     QSize minimumSizeHint() const override;
     QSize sizeHint() const override;
-    void loadImage(char* path);
+    void loadImage(QString& path);
 
 protected:
     void initializeGL() override;

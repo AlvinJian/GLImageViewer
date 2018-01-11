@@ -8,7 +8,7 @@ ImageViewer::ImageViewer(QWidget *parent)
 {
     auto *layout = new QHBoxLayout;
     viewer = new GLImageView;
-    char* path = ":/images/test.jpeg";
+    QString path = ":/images/test.jpeg";
     viewer->loadImage(path);
     layout->addWidget(viewer);
     setLayout(layout);

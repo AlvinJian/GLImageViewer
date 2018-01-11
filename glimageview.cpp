@@ -145,8 +145,8 @@ void GLImageView::setupDefaultShaderProgram()
     shaderProgram->setUniformValue("texture", 0);
 }
 
-void GLImageView::loadImage(char* path) {
-    QImage* p = new QImage(QImage(QString(path)).mirrored());
+void GLImageView::loadImage(QString& path) {
+    QImage* p = new QImage(QImage(path).mirrored());
     image = std::unique_ptr<QImage>(p);
     isTextureSync = false;
     norm_h = (float)((float)image->height()/(float)image->width());
