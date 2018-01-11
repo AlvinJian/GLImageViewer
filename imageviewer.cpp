@@ -3,6 +3,8 @@
 #include "imageviewer.h"
 #include "glimageview.h"
 
+#define LAYOUT_DEBUG 0
+
 ImageViewer::ImageViewer(QWidget *parent)
     : QWidget(parent)
 {
@@ -12,11 +14,13 @@ ImageViewer::ImageViewer(QWidget *parent)
     viewer->loadImage(path);
     layout->addWidget(viewer);
     setLayout(layout);
-    QPalette pal = palette();
+#if LAYOUT_DEBUG
     // set background
+    QPalette pal = palette();
     pal.setColor(QPalette::Background, Qt::red);
     setAutoFillBackground(true);
     setPalette(pal);
+#endif
 }
 
 ImageViewer::~ImageViewer()

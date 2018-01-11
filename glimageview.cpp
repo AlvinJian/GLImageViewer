@@ -12,7 +12,7 @@ namespace {
 
 GLImageView::GLImageView(QWidget *parent)
     : QOpenGLWidget(parent),
-      clearColor(Qt::black),
+      clearColor(Qt::gray),
       shaderProgram(nullptr),
       texture(nullptr),
       image(nullptr),
