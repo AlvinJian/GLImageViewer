@@ -18,7 +18,9 @@ GLImageView::GLImageView(QWidget *parent)
       image(nullptr),
       isTextureSync(false),
       norm_h(-1.0f),
-      viewSize(640,640)
+      viewSize(640,640),
+      vpPos(0, 0),
+      ebo(QOpenGLBuffer::Type::IndexBuffer)
 {
 }
 
@@ -41,6 +43,8 @@ void GLImageView::paintGL()
 
 void GLImageView::resizeGL(int width, int height)
 {
+    int side = qMin(width, height);
+    vpPos = QSize( (width - side) / 2, (height - side) / 2 );
     viewSize = QSize(width, height);
 }
 
@@ -57,8 +61,17 @@ QSize GLImageView::sizeHint() const
 
 void GLImageView::drawImage() {
     if (image.get() == nullptr) return;
-    int side = std::max(viewSize.width(), viewSize.height());
-    glViewport(0, -1*side/4, side, side);
+    int side = std::min(viewSize.width(), viewSize.height());
+    glViewport(vpPos.width(), vpPos.height(), side, side);
+
+    // setup vertex array object
+    if (!vao.isCreated())
+    {
+        vao.create();
+    }
+    vao.bind();
+
+    // setup vertex buffer object
     std::vector<GLfloat> coords;
     // bottom left;
     coords.push_back(-1.0f);
@@ -98,6 +111,21 @@ void GLImageView::drawImage() {
     }
     vbo.bind();
     vbo.allocate(coords.data(), coords.size()*sizeof(GLfloat));
+
+    // setup vertex element object
+    // [bl, br, tr, tl]
+    static const std::vector<GLuint> indices {
+        0, 1, 2,
+        2, 3, 0
+    };
+    if (!ebo.isCreated())
+    {
+        ebo.create();
+    }
+    ebo.bind();
+    ebo.allocate(indices.data(), indices.size()*sizeof(GLuint));
+
+    // setup texture
     if (texture.get() == nullptr || !isTextureSync) {
         QImage& img = *image.get();
         texture = std::unique_ptr<QOpenGLTexture>(new QOpenGLTexture(img));
@@ -108,7 +136,8 @@ void GLImageView::drawImage() {
     shaderProgram->setAttributeBuffer(PROGRAM_VERTEX_ATTRIBUTE, GL_FLOAT, 0, 3, 5 * sizeof(GLfloat));
     shaderProgram->setAttributeBuffer(PROGRAM_TEXCOORD_ATTRIBUTE, GL_FLOAT, 3 * sizeof(GLfloat), 2, 5 * sizeof(GLfloat));
     texture->bind();
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    // glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    glDrawElements( GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0 );
 }
 
 void GLImageView::setupDefaultShaderProgram()
@@ -152,4 +181,7 @@ void GLImageView::loadImage(QString& path) {
     norm_h = (float)((float)image->height()/(float)image->width());
     int h = (int)((float)image->width()*norm_h);
     viewSize = QSize(image->width(), h);
+    int side = qMin(viewSize.width(), viewSize.height());
+    vpPos = QSize( (viewSize.width() - side) / 2,
+                   (viewSize.height() - side) / 2 );
 }

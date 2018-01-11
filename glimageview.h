@@ -6,6 +6,7 @@
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 #include <QOpenGLBuffer>
+#include <QOpenGLVertexArrayObject>
 #include <memory>
 
 class GLImageView : public QOpenGLWidget, protected QOpenGLFunctions
@@ -31,10 +32,13 @@ private:
     std::unique_ptr<QOpenGLShaderProgram> shaderProgram;
     std::unique_ptr<QImage> image;
     QOpenGLBuffer vbo;
+    QOpenGLVertexArrayObject vao;
+    QOpenGLBuffer ebo;
     bool isTextureSync;
     QColor clearColor;
     float norm_h;
     QSize viewSize;
+    QSize vpPos;
 };
 
 #endif // GLIMAGEVIEW_H
