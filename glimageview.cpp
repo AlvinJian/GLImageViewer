@@ -125,16 +125,18 @@ void GLImageView::drawImage() {
     ebo.bind();
     ebo.allocate(indices.data(), indices.size()*sizeof(GLuint));
 
+    // associate vertex and buffer
+    shaderProgram->enableAttributeArray(PROGRAM_VERTEX_ATTRIBUTE);
+    shaderProgram->enableAttributeArray(PROGRAM_TEXCOORD_ATTRIBUTE);
+    shaderProgram->setAttributeBuffer(PROGRAM_VERTEX_ATTRIBUTE, GL_FLOAT, 0, 3, 5 * sizeof(GLfloat));
+    shaderProgram->setAttributeBuffer(PROGRAM_TEXCOORD_ATTRIBUTE, GL_FLOAT, 3 * sizeof(GLfloat), 2, 5 * sizeof(GLfloat));
+
     // setup texture
     if (texture.get() == nullptr || !isTextureSync) {
         QImage& img = *image.get();
         texture = std::unique_ptr<QOpenGLTexture>(new QOpenGLTexture(img));
         isTextureSync = true;
     }
-    shaderProgram->enableAttributeArray(PROGRAM_VERTEX_ATTRIBUTE);
-    shaderProgram->enableAttributeArray(PROGRAM_TEXCOORD_ATTRIBUTE);
-    shaderProgram->setAttributeBuffer(PROGRAM_VERTEX_ATTRIBUTE, GL_FLOAT, 0, 3, 5 * sizeof(GLfloat));
-    shaderProgram->setAttributeBuffer(PROGRAM_TEXCOORD_ATTRIBUTE, GL_FLOAT, 3 * sizeof(GLfloat), 2, 5 * sizeof(GLfloat));
     texture->bind();
     // glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     glDrawElements( GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0 );
@@ -167,6 +169,7 @@ void GLImageView::setupDefaultShaderProgram()
     shaderProgram = std::unique_ptr<QOpenGLShaderProgram>(new QOpenGLShaderProgram(this));
     shaderProgram->addShader(vshader);
     shaderProgram->addShader(fshader);
+    // assign locations of vertex and texture coordinates
     shaderProgram->bindAttributeLocation("vertex", PROGRAM_VERTEX_ATTRIBUTE);
     shaderProgram->bindAttributeLocation("texCoord", PROGRAM_TEXCOORD_ATTRIBUTE);
     shaderProgram->link();
