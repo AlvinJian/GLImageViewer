@@ -62,7 +62,8 @@ QSize GLImageView::sizeHint() const
 void GLImageView::drawImage() {
     if (image.get() == nullptr) return;
     int side = std::min(viewSize.width(), viewSize.height());
-    glViewport(vpPos.width(), vpPos.height(), side, side);
+    //glViewport(vpPos.width(), vpPos.height(), side, side);
+    glViewport(0, 0, viewSize.width(), viewSize.height());
 
     // setup vertex array object
     if (!vao.isCreated())
@@ -131,6 +132,19 @@ void GLImageView::drawImage() {
     shaderProgram->setAttributeBuffer(PROGRAM_VERTEX_ATTRIBUTE, GL_FLOAT, 0, 3, 5 * sizeof(GLfloat));
     shaderProgram->setAttributeBuffer(PROGRAM_TEXCOORD_ATTRIBUTE, GL_FLOAT, 3 * sizeof(GLfloat), 2, 5 * sizeof(GLfloat));
 
+    // setup transformation and projection
+    QMatrix4x4 model;
+    model.translate(0.0f, 0.0f, 0.0f);
+    QMatrix4x4 view;
+    view.translate(0.0f, 0.0f, -0.33f);
+    //view.rotate(-15.0f, 1.0f, 0.0f);
+    QMatrix4x4 projection;
+    float ratio =  (float)viewSize.width()/(float)viewSize.height(); // 1.0f;
+    projection.perspective(135.0f, ratio, 0.1f, 100.0f);
+    shaderProgram->setUniformValue("model", model);
+    shaderProgram->setUniformValue("view", view);
+    shaderProgram->setUniformValue("projection", projection);
+
     // setup texture
     if (texture.get() == nullptr || !isTextureSync) {
         QImage& img = *image.get();
@@ -138,7 +152,6 @@ void GLImageView::drawImage() {
         isTextureSync = true;
     }
     texture->bind();
-    // glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     glDrawElements( GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0 );
 }
 
@@ -146,12 +159,16 @@ void GLImageView::setupDefaultShaderProgram()
 {
     QOpenGLShader *vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
     const char *vsrc =
-        "attribute highp vec4 vertex;\n"
-        "attribute mediump vec4 texCoord;\n"
-        "varying mediump vec4 texc;\n"
+        "attribute highp vec3 vertex;\n"
+        "uniform mediump mat4 model;\n"
+        "uniform mediump mat4 view;\n"
+        "uniform mediump mat4 projection;\n"
+        "\n"
+        "attribute mediump vec2 texCoord;\n"
+        "varying mediump vec2 texc;\n"
         "void main(void)\n"
         "{\n"
-        "    gl_Position = vertex;\n"
+        "    gl_Position = projection * view * model * vec4(vertex, 1.0f);\n"
         "    texc = texCoord;\n"
         "}\n";
     vshader->compileSourceCode(vsrc);
@@ -159,10 +176,10 @@ void GLImageView::setupDefaultShaderProgram()
     QOpenGLShader *fshader = new QOpenGLShader(QOpenGLShader::Fragment, this);
     const char *fsrc =
         "uniform sampler2D texture;\n"
-        "varying mediump vec4 texc;\n"
+        "varying mediump vec2 texc;\n"
         "void main(void)\n"
         "{\n"
-        "    gl_FragColor = texture2D(texture, texc.st);\n"
+        "    gl_FragColor = texture2D(texture, texc);\n"
         "}\n";
     fshader->compileSourceCode(fsrc);
 
