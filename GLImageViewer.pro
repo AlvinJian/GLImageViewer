@@ -36,3 +36,6 @@ HEADERS += \
 
 RESOURCES += \
     resources.qrc
+
+DISTFILES += \
+    README.md
