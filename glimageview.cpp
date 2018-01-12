@@ -10,7 +10,7 @@
 #define DEFAULT_CAMERA_POS_Y (0.0f)
 #define DEFAULT_CAMERA_POS_Z (-0.33f)
 
-#define CLIP_NEAR (0.1f)
+#define CLIP_NEAR (0.01f)
 #define CLIP_FAR (100.0f)
 
 GLImageView::GLImageView(QWidget *parent)
@@ -159,7 +159,7 @@ void GLImageView::drawImage() {
     // assign transform matrices
     QMatrix4x4 projection; // projection matrxi must update everytime!
     float ratio =  (float)viewSize.width()/(float)viewSize.height(); // 1.0f;
-    projection.perspective(135.0f, ratio, 0.1f, 100.0f);
+    projection.perspective(135.0f, ratio, CLIP_NEAR, CLIP_FAR);
     shaderProgram->setUniformValue("model", model);
     shaderProgram->setUniformValue("view", view);
     shaderProgram->setUniformValue("projection", projection);
