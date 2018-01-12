@@ -23,13 +23,17 @@ protected:
     void initializeGL() override;
     void paintGL() override;
     void resizeGL(int width, int height) override;
+    void wheelEvent(QWheelEvent *event) override;
 
 private:
     void setupDefaultShaderProgram();
+    void setupDefaultTransform();
     void drawImage();
+    QVector3D predictCameraPos(QVector3D& translation);
+    void moveCamera(QVector3D& translation);
 
-    std::unique_ptr<QOpenGLTexture> texture;
     std::unique_ptr<QOpenGLShaderProgram> shaderProgram;
+    std::unique_ptr<QOpenGLTexture> texture;
     std::unique_ptr<QImage> image;
     QOpenGLBuffer vbo;
     QOpenGLVertexArrayObject vao;
@@ -38,6 +42,10 @@ private:
     QColor clearColor;
     float norm_h;
     QSize viewSize;
+
+    QMatrix4x4 model;
+    QMatrix4x4 view;
+    QVector3D cameraPos;
 };
 
 #endif // GLIMAGEVIEW_H

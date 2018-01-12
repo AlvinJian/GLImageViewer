@@ -6,17 +6,20 @@
 #define PROGRAM_VERTEX_ATTRIBUTE 0
 #define PROGRAM_TEXCOORD_ATTRIBUTE 1
 
-namespace {
-    QDebug debugger(QtMsgType::QtDebugMsg);
-}
+#define DEFAULT_CAMERA_POS_X (0.0f)
+#define DEFAULT_CAMERA_POS_Y (0.0f)
+#define DEFAULT_CAMERA_POS_Z (-0.33f)
+
+#define CLIP_NEAR (0.1f)
+#define CLIP_FAR (100.0f)
 
 GLImageView::GLImageView(QWidget *parent)
     : QOpenGLWidget(parent),
-      clearColor(Qt::gray),
       shaderProgram(nullptr),
       texture(nullptr),
       image(nullptr),
       isTextureSync(false),
+      clearColor(Qt::gray),
       norm_h(-1.0f),
       viewSize(640,640),
       ebo(QOpenGLBuffer::Type::IndexBuffer)
@@ -54,6 +57,32 @@ QSize GLImageView::minimumSizeHint() const
 QSize GLImageView::sizeHint() const
 {
     return viewSize;
+}
+
+void GLImageView::wheelEvent(QWheelEvent *event)
+{
+    QPoint numDegrees = event->angleDelta() / 8;
+    float degree = (float)numDegrees.y();
+    float zoom = degree/180.0f/2.0f;
+    QVector3D zoomVec(0.0f, 0.0f, zoom);
+    QVector3D predict = predictCameraPos(zoomVec);
+    QVector3D predictToPic = -predict;
+    if (predictToPic.z() >= CLIP_NEAR && predictToPic.z() <= CLIP_FAR) {
+        view.translate(zoomVec);
+        moveCamera(zoomVec);
+    }
+    event->accept();
+    update();
+}
+
+QVector3D GLImageView::predictCameraPos(QVector3D &translation) {
+    QVector3D fake(cameraPos);
+    fake += translation;
+    return fake;
+}
+
+void GLImageView::moveCamera(QVector3D &translation) {
+    cameraPos += translation;
 }
 
 void GLImageView::drawImage() {
@@ -127,13 +156,8 @@ void GLImageView::drawImage() {
     shaderProgram->setAttributeBuffer(PROGRAM_VERTEX_ATTRIBUTE, GL_FLOAT, 0, 3, 5 * sizeof(GLfloat));
     shaderProgram->setAttributeBuffer(PROGRAM_TEXCOORD_ATTRIBUTE, GL_FLOAT, 3 * sizeof(GLfloat), 2, 5 * sizeof(GLfloat));
 
-    // setup transformation and projection
-    QMatrix4x4 model;
-    model.translate(0.0f, 0.0f, 0.0f);
-    QMatrix4x4 view;
-    view.translate(0.0f, 0.0f, -0.33f);
-    //view.rotate(-15.0f, 1.0f, 0.0f);
-    QMatrix4x4 projection;
+    // assign transform matrices
+    QMatrix4x4 projection; // projection matrxi must update everytime!
     float ratio =  (float)viewSize.width()/(float)viewSize.height(); // 1.0f;
     projection.perspective(135.0f, ratio, 0.1f, 100.0f);
     shaderProgram->setUniformValue("model", model);
@@ -189,6 +213,15 @@ void GLImageView::setupDefaultShaderProgram()
     shaderProgram->setUniformValue("texture", 0);
 }
 
+void GLImageView::setupDefaultTransform() {
+    cameraPos = QVector3D(DEFAULT_CAMERA_POS_X, DEFAULT_CAMERA_POS_Y, DEFAULT_CAMERA_POS_Z);
+    model = QMatrix4x4();
+    model.translate(0.0f, 0.0f, 0.0f);
+    view = QMatrix4x4();
+    view.translate(cameraPos);
+    //view.rotate(-15.0f, 1.0f, 0.0f);
+}
+
 void GLImageView::loadImage(QString& path) {
     QImage* p = new QImage(QImage(path).mirrored());
     image = std::unique_ptr<QImage>(p);
@@ -197,4 +230,5 @@ void GLImageView::loadImage(QString& path) {
     int h = (int)((float)viewSize.width()*norm_h);
     viewSize = QSize(viewSize.width(), h);
     resize(viewSize);
+    setupDefaultTransform();
 }
