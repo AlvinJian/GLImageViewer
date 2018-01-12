@@ -38,7 +38,6 @@ private:
     QColor clearColor;
     float norm_h;
     QSize viewSize;
-    QSize vpPos;
 };
 
 #endif // GLIMAGEVIEW_H

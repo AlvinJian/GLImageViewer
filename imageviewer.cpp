@@ -10,8 +10,6 @@ ImageViewer::ImageViewer(QWidget *parent)
 {
     auto *layout = new QHBoxLayout;
     viewer = new GLImageView;
-    QString path = ":/images/test.jpeg";
-    viewer->loadImage(path);
     layout->addWidget(viewer);
     setLayout(layout);
 #if LAYOUT_DEBUG
@@ -21,6 +19,19 @@ ImageViewer::ImageViewer(QWidget *parent)
     setAutoFillBackground(true);
     setPalette(pal);
 #endif
+}
+
+void ImageViewer::showImage(QString &imagePath) {
+    viewer->loadImage(imagePath);
+    viewer->update();
+}
+
+QSize ImageViewer::minimumSizeHint() const {
+    return viewer->minimumSizeHint();
+}
+
+QSize ImageViewer::sizeHint() const {
+    return viewer->sizeHint();
 }
 
 ImageViewer::~ImageViewer()

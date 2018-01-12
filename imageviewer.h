@@ -16,6 +16,9 @@ class ImageViewer : public QWidget
 public:
     explicit ImageViewer(QWidget *parent = nullptr);
     ~ImageViewer();
+    void showImage(QString& imagePath);
+    QSize minimumSizeHint() const override;
+    QSize sizeHint() const override;
 
 signals:
 

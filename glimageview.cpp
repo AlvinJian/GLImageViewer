@@ -19,7 +19,6 @@ GLImageView::GLImageView(QWidget *parent)
       isTextureSync(false),
       norm_h(-1.0f),
       viewSize(640,640),
-      vpPos(0, 0),
       ebo(QOpenGLBuffer::Type::IndexBuffer)
 {
 }
@@ -43,8 +42,6 @@ void GLImageView::paintGL()
 
 void GLImageView::resizeGL(int width, int height)
 {
-    int side = qMin(width, height);
-    vpPos = QSize( (width - side) / 2, (height - side) / 2 );
     viewSize = QSize(width, height);
 }
 
@@ -61,8 +58,6 @@ QSize GLImageView::sizeHint() const
 
 void GLImageView::drawImage() {
     if (image.get() == nullptr) return;
-    int side = std::min(viewSize.width(), viewSize.height());
-    //glViewport(vpPos.width(), vpPos.height(), side, side);
     glViewport(0, 0, viewSize.width(), viewSize.height());
 
     // setup vertex array object
@@ -199,9 +194,7 @@ void GLImageView::loadImage(QString& path) {
     image = std::unique_ptr<QImage>(p);
     isTextureSync = false;
     norm_h = (float)((float)image->height()/(float)image->width());
-    int h = (int)((float)image->width()*norm_h);
-    viewSize = QSize(image->width(), h);
-    int side = qMin(viewSize.width(), viewSize.height());
-    vpPos = QSize( (viewSize.width() - side) / 2,
-                   (viewSize.height() - side) / 2 );
+    int h = (int)((float)viewSize.width()*norm_h);
+    viewSize = QSize(viewSize.width(), h);
+    resize(viewSize);
 }
