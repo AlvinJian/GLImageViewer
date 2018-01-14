@@ -26,6 +26,9 @@ protected:
     void paintGL() override;
     void resizeGL(int width, int height) override;
     void wheelEvent(QWheelEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
 
 private:
     void setupDefaultShaderProgram();
@@ -45,7 +48,10 @@ private:
 
     QVector3D cameraPos;
     QVector3D imagePos;
-    float focalLen;
+    float viewAngle;
+    float focalLength;
+
+    QPointF lastClickPos;
 };
 
 #endif // GLIMAGEVIEW_H

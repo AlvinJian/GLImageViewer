@@ -1,5 +1,6 @@
 #include "glimageview.h"
 #include <vector>
+#include <QtMath>
 #include <iostream>
 #include <QResizeEvent>
 
@@ -26,8 +27,9 @@ GLImageView::GLImageView(QWidget *parent)
       norm_h(-1.0f),
       viewSize(640,640),
       ebo(QOpenGLBuffer::Type::IndexBuffer),
-      focalLen(45.0f)
+      viewAngle(45.0f)
 {
+    focalLength = 1/qTan(qDegreesToRadians(viewAngle/2.0f));
 }
 
 GLImageView::~GLImageView()
@@ -68,8 +70,9 @@ void GLImageView::wheelEvent(QWheelEvent *event)
     QPoint numDegrees = event->angleDelta() / 8;
     float degree = (float)numDegrees.y();
     degree /= 2.0f;
-    if (focalLen+degree > MIN_FOCAL && focalLen+degree < MAX_FOCAL) {
-        focalLen += degree;
+    if (viewAngle+degree > MIN_FOCAL && viewAngle+degree < MAX_FOCAL) {
+        viewAngle += degree;
+        focalLength = 1/qTan(qDegreesToRadians(viewAngle/2.0f));
     }
     event->accept();
     update();
@@ -78,7 +81,7 @@ void GLImageView::wheelEvent(QWheelEvent *event)
 void GLImageView::drawImage() {
     if (image.get() == nullptr) return;
     glViewport(0, 0, viewSize.width(), viewSize.height());
-    qDebug() << viewSize.width() << ", " << viewSize.height() << "\n";
+    // qDebug() << viewSize.width() << ", " << viewSize.height() << "\n";
     // setup vertex array object
     if (!vao.isCreated())
     {
@@ -149,7 +152,7 @@ void GLImageView::drawImage() {
     // assign transform matrices
     QMatrix4x4 projection; // projection matrxi must update everytime!
     float ratio = ((float)viewSize.width())/((float)viewSize.height());
-    projection.perspective(focalLen, ratio, CLIP_NEAR, CLIP_FAR);
+    projection.perspective(viewAngle, ratio, CLIP_NEAR, CLIP_FAR);
     QMatrix4x4 model = getModelMatrix();
     shaderProgram->setUniformValue("model", model);
     QMatrix4x4 viewMat = getViewMatrix();
@@ -224,7 +227,8 @@ void GLImageView::loadImage(QString& path) {
 QMatrix4x4 GLImageView::getViewMatrix() {
     QVector3D up(0.0f, 1.0f, 0.0f);
     QMatrix4x4 ret;
-    ret.lookAt(cameraPos, imagePos, up);
+    QVector3D center(cameraPos.x(), cameraPos.y(), imagePos.z());
+    ret.lookAt(cameraPos, center, up);
     return ret;
 }
 
@@ -232,4 +236,29 @@ QMatrix4x4 GLImageView::getModelMatrix() {
     QMatrix4x4 ret;
     ret.translate(imagePos);
     return ret;
+}
+
+void GLImageView::mousePressEvent(QMouseEvent *event) {
+    lastClickPos = event->localPos();
+    qDebug() << lastClickPos;
+}
+
+// movement is weird somehow...
+void GLImageView::mouseMoveEvent(QMouseEvent *event) {
+    QPointF delta = event->localPos()-lastClickPos;
+    float factor = qAbs(imagePos.z()-cameraPos.z()) / focalLength;
+    factor /= (qMax(viewSize.width(), viewSize.height()));
+    factor *= 3.5f;
+    qDebug() << "dx=" << delta.x();
+    qDebug() << "dy=" << delta.y();
+    qDebug() << "L=" << (imagePos.z()-cameraPos.z());
+    qDebug() << "focalLength=" << focalLength;
+    qDebug() << "factor" << factor;
+    delta *= factor;
+    imagePos -= QVector3D(delta.x(), delta.y(), 0.0f);
+    lastClickPos = event->pos();
+    update();
+}
+
+void GLImageView::mouseReleaseEvent(QMouseEvent *event) {
 }
