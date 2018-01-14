@@ -68,7 +68,7 @@ QSize GLImageView::sizeHint() const
 void GLImageView::wheelEvent(QWheelEvent *event)
 {
     QPoint numDegrees = event->angleDelta() / 8;
-    float degree = (float)numDegrees.y();
+    float degree = (float)numDegrees.y() * -1.0f;
     degree /= 2.0f;
     if (viewAngle+degree > MIN_FOCAL && viewAngle+degree < MAX_FOCAL) {
         viewAngle += degree;
