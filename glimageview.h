@@ -18,6 +18,8 @@ public:
     QSize minimumSizeHint() const override;
     QSize sizeHint() const override;
     void loadImage(QString& path);
+    QMatrix4x4 getViewMatrix();
+    QMatrix4x4 getModelMatrix();
 
 protected:
     void initializeGL() override;
@@ -29,8 +31,6 @@ private:
     void setupDefaultShaderProgram();
     void setupDefaultTransform();
     void drawImage();
-    QVector3D predictCameraPos(QVector3D& translation);
-    void moveCamera(QVector3D& translation);
 
     std::unique_ptr<QOpenGLShaderProgram> shaderProgram;
     std::unique_ptr<QOpenGLTexture> texture;
@@ -43,9 +43,9 @@ private:
     float norm_h;
     QSize viewSize;
 
-    QMatrix4x4 model;
-    QMatrix4x4 view;
     QVector3D cameraPos;
+    QVector3D imagePos;
+    float focalLen;
 };
 
 #endif // GLIMAGEVIEW_H
