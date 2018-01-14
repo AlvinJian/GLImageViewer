@@ -18,8 +18,8 @@ public:
     QSize minimumSizeHint() const override;
     QSize sizeHint() const override;
     void loadImage(QString& path);
-    QMatrix4x4 getViewMatrix();
-    QMatrix4x4 getModelMatrix();
+    QMatrix4x4 getViewMatrix() const;
+    QMatrix4x4 getModelMatrix() const;
 
 protected:
     void initializeGL() override;
@@ -29,11 +29,15 @@ protected:
     void mouseMoveEvent(QMouseEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent* event) override;
 
 private:
     void setupDefaultShaderProgram();
     void setupDefaultTransform();
     void drawImage();
+    void moveImage(const QPointF& cursorPos);
+    void rotateImage(const QPointF& cursorPos);
 
     std::unique_ptr<QOpenGLShaderProgram> shaderProgram;
     std::unique_ptr<QOpenGLTexture> texture;
@@ -48,10 +52,12 @@ private:
 
     QVector3D cameraPos;
     QVector3D imagePos;
+    QVector3D imageAngle;
     float viewAngle;
     float focalLength;
 
     QPointF lastClickPos;
+    bool isRotMode;
 };
 
 #endif // GLIMAGEVIEW_H

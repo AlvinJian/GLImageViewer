@@ -10,6 +10,7 @@ ImageViewer::ImageViewer(QWidget *parent)
 {
     auto *layout = new QHBoxLayout;
     viewer = new GLImageView;
+    viewer->setFocusPolicy(Qt::FocusPolicy::ClickFocus);
     layout->addWidget(viewer);
     setLayout(layout);
 #if LAYOUT_DEBUG

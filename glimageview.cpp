@@ -27,7 +27,8 @@ GLImageView::GLImageView(QWidget *parent)
       norm_h(-1.0f),
       viewSize(640,640),
       ebo(QOpenGLBuffer::Type::IndexBuffer),
-      viewAngle(45.0f)
+      viewAngle(45.0f),
+      isRotMode(false)
 {
     focalLength = 1/qTan(qDegreesToRadians(viewAngle/2.0f));
 }
@@ -154,6 +155,8 @@ void GLImageView::drawImage() {
     float ratio = ((float)viewSize.width())/((float)viewSize.height());
     projection.perspective(viewAngle, ratio, CLIP_NEAR, CLIP_FAR);
     QMatrix4x4 model = getModelMatrix();
+    model.rotate(imageAngle.x(), 0.0f, 1.0f, 0.0f);
+    model.rotate(imageAngle.y()*-1.0f, 1.0f, 0.0f, 0.0f);
     shaderProgram->setUniformValue("model", model);
     QMatrix4x4 viewMat = getViewMatrix();
     shaderProgram->setUniformValue("view", viewMat);
@@ -211,6 +214,7 @@ void GLImageView::setupDefaultShaderProgram()
 void GLImageView::setupDefaultTransform() {
     cameraPos = QVector3D(DEFAULT_CAMERA_POS_X, DEFAULT_CAMERA_POS_Y, DEFAULT_CAMERA_POS_Z);
     imagePos = QVector3D();
+    imageAngle = QVector3D();
 }
 
 void GLImageView::loadImage(QString& path) {
@@ -224,7 +228,7 @@ void GLImageView::loadImage(QString& path) {
     setupDefaultTransform();
 }
 
-QMatrix4x4 GLImageView::getViewMatrix() {
+QMatrix4x4 GLImageView::getViewMatrix() const {
     QVector3D up(0.0f, 1.0f, 0.0f);
     QMatrix4x4 ret;
     QVector3D center(cameraPos.x(), cameraPos.y(), imagePos.z());
@@ -232,7 +236,7 @@ QMatrix4x4 GLImageView::getViewMatrix() {
     return ret;
 }
 
-QMatrix4x4 GLImageView::getModelMatrix() {
+QMatrix4x4 GLImageView::getModelMatrix() const {
     QMatrix4x4 ret;
     ret.translate(imagePos);
     return ret;
@@ -245,7 +249,18 @@ void GLImageView::mousePressEvent(QMouseEvent *event) {
 
 // movement is weird somehow...
 void GLImageView::mouseMoveEvent(QMouseEvent *event) {
-    QPointF delta = event->localPos()-lastClickPos;
+    if (isRotMode) {
+        rotateImage(event->localPos());
+    } else {
+        moveImage(event->localPos());
+    }
+    lastClickPos = event->pos();
+    event->accept();
+    update();
+}
+
+void GLImageView::moveImage(const QPointF &cursorPos) {
+    QPointF delta = cursorPos-lastClickPos;
     float factor = qAbs(imagePos.z()-cameraPos.z()) / focalLength;
     factor /= (qMax(viewSize.width(), viewSize.height()));
     factor *= 3.5f;
@@ -256,9 +271,37 @@ void GLImageView::mouseMoveEvent(QMouseEvent *event) {
     qDebug() << "factor" << factor;
     delta *= factor;
     imagePos -= QVector3D(delta.x(), delta.y(), 0.0f);
-    lastClickPos = event->pos();
-    update();
+}
+
+void GLImageView::rotateImage(const QPointF &cursorPos) {
+    QPointF delta = cursorPos-lastClickPos;
+    delta.setX(delta.x() / (qreal)viewSize.width());
+    delta.setX(delta.x() * 180.0f);
+    delta.setY(delta.y() / (qreal)viewSize.height());
+    delta.setY(delta.y() * 180.0f);
+    qDebug() << delta;
+    imageAngle += QVector3D(delta.x(), delta.y(), 0.0f);
 }
 
 void GLImageView::mouseReleaseEvent(QMouseEvent *event) {
+}
+
+void GLImageView::keyPressEvent(QKeyEvent *event) {
+    if (event->key() == Qt::Key_Control) {
+        qDebug() << "ctrl is pressed";
+        isRotMode = true;
+    } else {
+        // call base class method as event is not handled.
+        QOpenGLWidget::keyPressEvent(event);
+    }
+}
+
+void GLImageView::keyReleaseEvent(QKeyEvent *event) {
+    if (event->key() == Qt::Key_Control) {
+        qDebug() << "ctrl is released";
+        isRotMode = false;
+    } else {
+        // call base class method as event is not handled.
+        QOpenGLWidget::keyReleaseEvent(event);
+    }
 }
