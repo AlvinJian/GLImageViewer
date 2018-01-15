@@ -1,5 +1,5 @@
 ### Description
-This is an image viewer based on Qt and OpenGL. I do it for fun :)
+This is an image viewer based on Qt and OpenGL.
 
 ### TODO
 * [DONE] ~~Camera-based zoom in/out using scrolling.~~
