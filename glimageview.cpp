@@ -279,7 +279,7 @@ void GLImageView::rotateImage(const QPointF &cursorPos) {
     delta.setX(delta.x() / (qreal)viewSize.width());
     delta.setX(delta.x() * 180.0f);
     delta.setY(delta.y() / (qreal)viewSize.height());
-    delta.setY(delta.y() * 180.0f);
+    delta.setY(delta.y() * -180.0f);
     qDebug() << delta;
     imageAngle += QVector3D(delta.x(), delta.y(), 0.0f);
 }

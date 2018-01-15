@@ -1,0 +1,130 @@
+diff --cc glimageview.cpp
+index 7877572,adc5356..0000000
+--- a/glimageview.cpp
++++ b/glimageview.cpp
+@@@ -151,9 -151,9 +151,7 @@@ void GLImageView::drawImage() 
+      shaderProgram->setAttributeBuffer(PROGRAM_TEXCOORD_ATTRIBUTE, GL_FLOAT, 3 * sizeof(GLfloat), 2, 5 * sizeof(GLfloat));
+  
+      // assign transform matrices
+--    QMatrix4x4 projection; // projection matrxi must update everytime!
+--    float ratio = ((float)viewSize.width())/((float)viewSize.height());
+--    projection.perspective(viewAngle, ratio, CLIP_NEAR, CLIP_FAR);
+++    QMatrix4x4 projection = getProjectionMatrix(); // projection matrxi must update everytime!
+      QMatrix4x4 model = getModelMatrix();
+      model.rotate(imageAngle.x(), 0.0f, 1.0f, 0.0f);
+      model.rotate(imageAngle.y()*-1.0f, 1.0f, 0.0f, 0.0f);
+@@@ -215,6 -215,6 +213,12 @@@ void GLImageView::setupDefaultTransform
+      cameraPos = QVector3D(DEFAULT_CAMERA_POS_X, DEFAULT_CAMERA_POS_Y, DEFAULT_CAMERA_POS_Z);
+      imagePos = QVector3D();
+      imageAngle = QVector3D();
+++
+++    QVector4D dummy(imagePos.x(),imagePos.y(), imagePos.z(), 1.0f);
+++    QMatrix4x4 view = getViewMatrix();
+++    QMatrix4x4 model = getModelMatrix();
+++    QMatrix4x4 projection = getProjectionMatrix();
+++    glPosCenter = projection * view * model * dummy;
+  }
+  
+  void GLImageView::loadImage(QString& path) {
+@@@ -243,6 -242,6 +247,13 @@@ QMatrix4x4 GLImageView::getModelMatrix(
+      return ret;
+  }
+  
+++QMatrix4x4 GLImageView::getProjectionMatrix() const {
+++    QMatrix4x4 projection;
+++    float ratio = ((float)viewSize.width())/((float)viewSize.height());
+++    projection.perspective(viewAngle, ratio, CLIP_NEAR, CLIP_FAR);
+++    return projection;
+++}
+++
+  void GLImageView::mousePressEvent(QMouseEvent *event) {
+      lastClickPos = event->localPos();
+      qDebug() << lastClickPos;
+@@@ -261,17 -260,27 +272,38 @@@ void GLImageView::mouseMoveEvent(QMouse
+  }
+  
+  void GLImageView::moveImage(const QPointF &cursorPos) {
+ -//    QPointF delta = cursorPos-lastClickPos;
+ -//    float factor = qAbs(imagePos.z()-cameraPos.z()) / focalLength;
+ -//    factor /= (qMax(viewSize.width(), viewSize.height()) * 0.5f);
+ -//    // factor *= 3.5f;
+ -//    qDebug() << "dx=" << delta.x();
+ -//    qDebug() << "dy=" << delta.y();
+ -//    qDebug() << "L=" << (imagePos.z()-cameraPos.z());
+ -//    qDebug() << "focalLength=" << focalLength;
+ -//    qDebug() << "factor" << factor;
+ -//    delta *= factor;
+ -//    imagePos -= QVector3D(delta.x(), delta.y(), 0.0f);
+      QPointF delta = cursorPos-lastClickPos;
+-     float factor = qAbs(imagePos.z()-cameraPos.z()) / focalLength;
+-     factor /= (qMax(viewSize.width(), viewSize.height()));
+-     factor *= 3.5f;
+-     qDebug() << "dx=" << delta.x();
+-     qDebug() << "dy=" << delta.y();
+-     qDebug() << "L=" << (imagePos.z()-cameraPos.z());
+-     qDebug() << "focalLength=" << focalLength;
+-     qDebug() << "factor" << factor;
+-     delta *= factor;
+-     imagePos += QVector3D(delta.x(), -1.0f*delta.y(), 0.0f);
+ -    float side = qMax(viewSize.width(), viewSize.height())/3.0f;
+++    float side = qMax(viewSize.width(), viewSize.height())/2.0f;
++     delta.setX(delta.x() / side);
+ -    delta.setY(delta.y() / side);
+ -    QVector3D vec(delta.x(), delta.y(), 0.0f);
+ -    QMatrix4x4 viewMat = getViewMatrix();
+ -    QMatrix4x4 invViewMat = viewMat.inverted();
+ -    QVector3D transVec = invViewMat * vec;
+ -    transVec.setY(-1.0f*transVec.y());
+ -    imagePos += transVec;
+++    delta.setY(-1.0f * delta.y() / side);
+++
+++//    QVector4D dummy(0.0f, 0.0f, 0.0f, 1.0f);
+++//    QMatrix4x4 view = getViewMatrix();
+++//    QMatrix4x4 model = getModelMatrix();
+++//    QMatrix4x4 projection = getProjectionMatrix();
+++//    QVector4D dt = projection * view * model * dummy;
+++//    qDebug() << "dt" << dt;
+++
+++
+++    QMatrix4x4 viewInv = getViewMatrix().inverted();
+++    // qDebug() << "viewInv" << viewInv;
+++    QMatrix4x4 modelInv = getModelMatrix().inverted();
+++    // qDebug() << "modelInv" << modelInv;
+++    QMatrix4x4 projectionInv = getProjectionMatrix().inverted();
+++    //qDebug() << "projectionInv" << projectionInv;
+++    QVector4D mov(delta.x(), delta.y(), 0.0f, 0.0f);
+++    glPosCenter += mov;
+++    qDebug() << "mov" << mov;
+++    qDebug() << "glPosCenter" << glPosCenter;
+++    QVector4D vec4 = modelInv * (viewInv * (projectionInv * glPosCenter));
+++    qDebug() << "vec4" << vec4;
+++    imagePos = vec4.toVector3D();
+++
+++
+++//    imagePos += vec;
+++//    imagePos += QVector3D(movTrans.x()/movTrans.w(), movTrans.y()/movTrans.w(),
+++//                          movTrans.z()/movTrans.w());
+++    qDebug() << "===";
+  }
+  
+  void GLImageView::rotateImage(const QPointF &cursorPos) {
+diff --git a/glimageview.h b/glimageview.h
+index 2e2d42d..c03b254 100644
+--- a/glimageview.h
++++ b/glimageview.h
+@@ -20,6 +20,7 @@ public:
+     void loadImage(QString& path);
+     QMatrix4x4 getViewMatrix() const;
+     QMatrix4x4 getModelMatrix() const;
++    QMatrix4x4 getProjectionMatrix() const;
+ 
+ protected:
+     void initializeGL() override;
+@@ -52,6 +53,7 @@ private:
+ 
+     QVector3D cameraPos;
+     QVector3D imagePos;
++    QVector4D glPosCenter;
+     QVector3D imageAngle;
+     float viewAngle;
+     float focalLength;
