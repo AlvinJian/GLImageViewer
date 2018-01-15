@@ -231,8 +231,9 @@ void GLImageView::loadImage(QString& path) {
 QMatrix4x4 GLImageView::getViewMatrix() const {
     QVector3D up(0.0f, 1.0f, 0.0f);
     QMatrix4x4 ret;
+    ret.translate(cameraPos);
     QVector3D center(cameraPos.x(), cameraPos.y(), imagePos.z());
-    ret.lookAt(cameraPos, center, up);
+    ret.lookAt(QVector3D(), center, up);
     return ret;
 }
 
@@ -270,7 +271,7 @@ void GLImageView::moveImage(const QPointF &cursorPos) {
     qDebug() << "focalLength=" << focalLength;
     qDebug() << "factor" << factor;
     delta *= factor;
-    imagePos -= QVector3D(delta.x(), delta.y(), 0.0f);
+    imagePos += QVector3D(delta.x(), -1.0f*delta.y(), 0.0f);
 }
 
 void GLImageView::rotateImage(const QPointF &cursorPos) {
