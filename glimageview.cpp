@@ -91,38 +91,39 @@ void GLImageView::drawImage() {
     vao.bind();
 
     // setup vertex buffer object
+    // vertex coords and texture coords should be mirriored in the vertical direction
     std::vector<GLfloat> coords;
     // bottom left;
     coords.push_back(-1.0f);
     coords.push_back(-1.0f * norm_h);
     coords.push_back(0.0f);
-    // tex coordinate
+    // tex coordinate top left
     coords.push_back(0.0f);
-    coords.push_back(0.0f);
+    coords.push_back(1.0f);
 
     // bottom right
     coords.push_back(1.0f);
     coords.push_back(-1.0f * norm_h);
     coords.push_back(0.0f);
-    // tex coordinate
+    // tex coordinate top right
     coords.push_back(1.0f);
-    coords.push_back(0.0f);
+    coords.push_back(1.0f);
 
     // top right
     coords.push_back(1.0f);
     coords.push_back(1.0f * norm_h);
     coords.push_back(0.0f);
-    // tex coordinate
+    // tex coordinate bottom right
     coords.push_back(1.0f);
-    coords.push_back(1.0f);
+    coords.push_back(0.0f);
 
     // top left
     coords.push_back(-1.0f);
     coords.push_back(1.0f * norm_h);
     coords.push_back(0.0f);
-    // tex coordinate
+    // tex coordinate bottom left
     coords.push_back(0.0f);
-    coords.push_back(1.0f);
+    coords.push_back(0.0f);
 
     if (!vbo.isCreated())
     {
@@ -218,7 +219,7 @@ void GLImageView::setupDefaultTransform() {
 }
 
 void GLImageView::loadImage(QString& path) {
-    QImage* p = new QImage(QImage(path).mirrored());
+    QImage* p = new QImage(path);
     image = std::unique_ptr<QImage>(p);
     isTextureSync = false;
     norm_h = (float)((float)image->height()/(float)image->width());
