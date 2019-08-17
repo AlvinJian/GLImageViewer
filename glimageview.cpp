@@ -41,11 +41,15 @@ void GLImageView::initializeGL()
 {
     initializeOpenGLFunctions();
     setupDefaultShaderProgram();
+
+    glClearColor(static_cast<GLclampf>(clearColor.redF()),
+                 static_cast<GLclampf>(clearColor.greenF()),
+                 static_cast<GLclampf>(clearColor.blueF()),
+                 static_cast<GLclampf>(clearColor.alphaF()) );
 }
 
 void GLImageView::paintGL()
 {
-    glClearColor(clearColor.redF(), clearColor.greenF(), clearColor.blueF(), clearColor.alphaF());
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     drawImage();
 }
